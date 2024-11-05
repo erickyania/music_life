@@ -1,7 +1,11 @@
 from django.shortcuts import render
-from django.http import HttpResponse
+from rest_framework import generics  # creates a class that inherits from generic view class
+from .serializers import RoomSerializer
+from .models import Room
 
 # Create your views here.
 
-def main(request):
-    return HttpResponse("<h1> Hello kyani</h1>")
+# api view
+class RoomView(generics.CreateAPIView):
+    queryset = Room.objects.all()
+    serializer_class = RoomSerializer  # convert complex data types to json etc
