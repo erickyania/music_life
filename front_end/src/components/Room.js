@@ -1,4 +1,5 @@
 import React, { Component } from "react";
+
 export default class Room extends Component {
   constructor(props) {
     super(props);
@@ -7,10 +8,15 @@ export default class Room extends Component {
       guestCanPause: false,
       isHost: false,
     };
-    this.roomCode = this.props.match.params.roomCode;
+    this.roomCode = this.props.roomCode;
   }
+
+  componentDidMount() {
+    this.getRoomDetails();
+  }
+
   getRoomDetails() {
-    fetch("/api/get-room" + "?code=" + this.roomCode)
+    fetch("/api/get-room?code=" + this.roomCode)
       .then((response) => response.json())
       .then((data) => {
         this.setState({
@@ -19,14 +25,15 @@ export default class Room extends Component {
           isHost: data.is_host,
         });
       });
-  }  
+  }
+
   render() {
     return (
       <div>
         <h3>{this.roomCode}</h3>
-        <p>Votes:{this.state.votes_to_skip}</p>
-        <p>Guest can pause:{this.state.guestCsnPause}</p>
-        <p>Host:{this.state.isHost}</p>
+        <p>Votes: {this.state.votesToSkip}</p>
+        <p>Guest can pause: {String(this.state.guestCanPause)}</p>
+        <p>Host: {String(this.state.isHost)}</p>
       </div>
     );
   }

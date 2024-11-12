@@ -8,7 +8,11 @@ export default class App extends Component {
     super(props);
   }
   render() {
-    return <HomePage></HomePage>;
+    return (
+      <div className="centre">
+        <HomePage></HomePage>;
+      </div>
+    );
   }
 }
 

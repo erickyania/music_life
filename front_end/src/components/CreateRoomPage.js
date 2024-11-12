@@ -8,9 +8,15 @@ import FormControl from "@mui/material/FormControl";
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import FormControlLabel from "@mui/material/FormControlLabel";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
-export default class CreateRoomPage extends Component {
+// Wrapper function to use the navigate hook with class component
+function CreateRoomPageWrapper() {
+  const navigate = useNavigate();
+  return <CreateRoomPage navigate={navigate} />;
+}
+
+class CreateRoomPage extends Component {
   defaultVotes = 2;
 
   constructor(props) {
@@ -33,7 +39,7 @@ export default class CreateRoomPage extends Component {
 
   handleGuestCanPauseChange(e) {
     this.setState({
-      guestCanPause: e.target.value === "true" ? true : false,
+      guestCanPause: e.target.value === "true",
     });
   }
 
@@ -48,7 +54,7 @@ export default class CreateRoomPage extends Component {
     };
     fetch("/api/create-room", requestOptions)
       .then((response) => response.json())
-      .then((data) => this.props.history.push("/room/" + data.code));
+      .then((data) => this.props.navigate("/room/" + data.code));
   }
 
   render() {
@@ -66,7 +72,7 @@ export default class CreateRoomPage extends Component {
 
         <FormControl component="fieldset">
           <FormHelperText>
-            <div align="center">Guest Control of Playback State</div>
+            <span align="center">Guest Control of Playback State</span>
           </FormHelperText>
           <RadioGroup
             row
@@ -100,7 +106,7 @@ export default class CreateRoomPage extends Component {
             }}
           />
           <FormHelperText>
-            <div align="center">Votes Required To Skip Song</div>
+            <span align="center">Votes Required To Skip Song</span>
           </FormHelperText>
         </FormControl>
 
@@ -119,3 +125,5 @@ export default class CreateRoomPage extends Component {
     );
   }
 }
+
+export default CreateRoomPageWrapper;
