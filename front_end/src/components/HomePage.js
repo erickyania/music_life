@@ -10,12 +10,12 @@ import {
   Link,
   Navigate,
 } from "react-router-dom";
-import { useParams } from "react-router-dom";
 
 // Wrapper to pass URL parameters to Room component
-function RoomWrapper() {
-  const { roomcode } = useParams();
-  return <Room roomCode={roomcode} />;
+import { useParams } from "react-router-dom";
+function RoomWrapper({ leaveRoomCallback }) {
+  const { roomCode } = useParams();
+  return <Room roomCode={roomCode} leaveRoomCallback={leaveRoomCallback} />;
 }
 
 export default class HomePage extends Component {
@@ -24,26 +24,26 @@ export default class HomePage extends Component {
     this.state = {
       roomCode: null,
     };
+    this.clearRoomCode = this.clearRoomCode.bind(this);
   }
 
   async componentDidMount() {
-    // Fetch to check if user is already in a room
     try {
       const response = await fetch("/api/user-in-room");
-      const data = await response.json();
-      this.setState({ roomCode: data.code });
-      console.log("Room code:", data.code); // For troubleshooting
+      if (response.ok) {
+        const data = await response.json();
+        this.setState({ roomCode: data.code });
+      }
     } catch (error) {
-      console.error("Error fetching room data:", error);
+      console.error("Error checking user room:", error);
     }
   }
 
+  clearRoomCode() {
+    this.setState({ roomCode: null });
+  }
+
   renderHomePage() {
-    // Conditionally render redirect if roomCode is present
-    if (this.state.roomCode) {
-      return <Navigate to={`/room/${this.state.roomCode}`} replace />;
-    }
-    // Main home page layout with buttons
     return (
       <Container>
         <Stack
@@ -52,7 +52,7 @@ export default class HomePage extends Component {
           justifyContent="center"
           sx={{ minHeight: "100vh" }}
         >
-          <Typography variant="h3" component="h3">
+          <Typography variant="h3" component="h1">
             House Party
           </Typography>
           <Stack direction="row" spacing={2}>
@@ -82,10 +82,22 @@ export default class HomePage extends Component {
     return (
       <Router>
         <Routes>
-          <Route path="/" element={this.renderHomePage()} />
+          <Route
+            path="/"
+            element={
+              this.state.roomCode ? (
+                <Navigate to={`/room/${this.state.roomCode}`} replace />
+              ) : (
+                this.renderHomePage()
+              )
+            }
+          />
           <Route path="/join" element={<RoomJoinPage />} />
           <Route path="/create" element={<CreateRoomPage />} />
-          <Route path="/room/:roomcode" element={<RoomWrapper />} />
+          <Route
+            path="/room/:roomCode"
+            element={<RoomWrapper leaveRoomCallback={this.clearRoomCode} />}
+          />
         </Routes>
       </Router>
     );
