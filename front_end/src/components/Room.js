@@ -1,6 +1,7 @@
 import React, { Component } from "react";
-import { Stack, Button, Typography, Container } from "@mui/material";
-import { Navigate } from "react-router-dom";  // Import Navigate
+import { Grid, Button, Typography } from "@mui/material";
+import CreateRoomPage from "./CreateRoomPage";
+import { Navigate } from "react-router-dom";
 
 export default class Room extends Component {
   constructor(props) {
@@ -9,10 +10,14 @@ export default class Room extends Component {
       votesToSkip: 2,
       guestCanPause: false,
       isHost: false,
-      redirectToHome: false,  // State to control the redirection
+      showSettings: false,
+      redirectToHome: false,
     };
     this.roomCode = this.props.roomCode;
-    this.leaveRoom = this.leaveRoom.bind(this);
+    this.leaveButtonPressed = this.leaveButtonPressed.bind(this);
+    this.updateShowSettings = this.updateShowSettings.bind(this);
+    this.renderSettingsButton = this.renderSettingsButton.bind(this);
+    this.renderSettings = this.renderSettings.bind(this);
     this.getRoomDetails = this.getRoomDetails.bind(this);
   }
 
@@ -23,70 +28,124 @@ export default class Room extends Component {
   async getRoomDetails() {
     try {
       const response = await fetch(`/api/get-room?code=${this.roomCode}`);
-      if (response.ok) {
-        const data = await response.json();
-        this.setState({
-          votesToSkip: data.votes_to_skip,
-          guestCanPause: data.guest_can_pause,
-          isHost: data.is_host,
-        });
-      } else {
-        console.error("Room not found");
-        this.setState({ redirectToHome: true });  // Set redirectToHome to true
+      if (!response.ok) {
+        this.setState({ redirectToHome: true });
+        return;
       }
+      const data = await response.json();
+      this.setState({
+        votesToSkip: data.votes_to_skip,
+        guestCanPause: data.guest_can_pause,
+        isHost: data.is_host,
+      });
     } catch (error) {
-      console.error("Error fetching room details:", error);
+      this.setState({ redirectToHome: true });
     }
   }
 
-  async leaveRoom() {
+  async leaveButtonPressed() {
     try {
-      const response = await fetch("/api/leave-room", { method: "POST" });
-      if (response.ok) {
-        this.props.leaveRoomCallback(); // Notify the parent component to clear the room code
-        this.setState({ redirectToHome: true });  // Set redirectToHome to true after leaving
-      } else {
-        console.error("Failed to leave the room");
-      }
+      const requestOptions = {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      };
+      await fetch("/api/leave-room", requestOptions);
+      this.props.leaveRoomCallback();
+      this.setState({ redirectToHome: true });
     } catch (error) {
       console.error("Error leaving the room:", error);
     }
   }
 
-  render() {
-    if (this.state.redirectToHome) {
-      return <Navigate to="/" replace />;  // Perform the redirect to home page
-    }
+  updateShowSettings(value) {
+    console.log("Updating showSettings to:", value); // Debugging line to confirm click
+    this.setState({
+      showSettings: value,
+    });
+  }
 
+  renderSettings() {
     return (
-      <Container>
-        <Stack
-          spacing={4}
-          alignItems="center"
-          justifyContent="center"
-          sx={{ minHeight: "100vh" }}
-        >
-          <Typography variant="h4" component="h2">
-            Room Code: {this.roomCode}
-          </Typography>
-          <Typography variant="h6" component="h3">
-            Votes Required to Skip: {this.state.votesToSkip}
-          </Typography>
-          <Typography variant="h6" component="h3">
-            Guest Can Pause: {this.state.guestCanPause ? "Yes" : "No"}
-          </Typography>
-          <Typography variant="h6" component="h3">
-            Host: {this.state.isHost ? "Yes" : "No"}
-          </Typography>
+      <Grid container spacing={1}>
+        <Grid item xs={12} align="center">
+          <CreateRoomPage
+            update={true}
+            votesToSkip={this.state.votesToSkip}
+            guestCanPause={this.state.guestCanPause}
+            roomCode={this.roomCode}
+            updateCallback={this.getRoomDetails}
+          />
+        </Grid>
+        <Grid item xs={12} align="center">
           <Button
             variant="contained"
             color="secondary"
-            onClick={this.leaveRoom}
+            onClick={() => this.updateShowSettings(false)}
+          >
+            Close
+          </Button>
+        </Grid>
+      </Grid>
+    );
+  }
+
+  renderSettingsButton() {
+    return (
+      <Grid item xs={12} align="center">
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={() => this.updateShowSettings(true)} // This should trigger the state change
+        >
+          Settings
+        </Button>
+      </Grid>
+    );
+  }
+
+  render() {
+    if (this.state.redirectToHome) {
+      return <Navigate to="/" replace />;
+    }
+
+    // Conditionally render the settings or the room details
+    if (this.state.showSettings) {
+      return this.renderSettings();
+    }
+
+    return (
+      <Grid container spacing={1}>
+        <Grid item xs={12} align="center">
+          <Typography variant="h4" component="h4">
+            Code: {this.roomCode}
+          </Typography>
+        </Grid>
+        <Grid item xs={12} align="center">
+          <Typography variant="h6" component="h6">
+            Votes: {this.state.votesToSkip}
+          </Typography>
+        </Grid>
+        <Grid item xs={12} align="center">
+          <Typography variant="h6" component="h6">
+            Guest Can Pause: {this.state.guestCanPause.toString()}
+          </Typography>
+        </Grid>
+        <Grid item xs={12} align="center">
+          <Typography variant="h6" component="h6">
+            Host: {this.state.isHost.toString()}
+          </Typography>
+        </Grid>
+        {this.state.isHost ? this.renderSettingsButton() : null}
+        <Grid item xs={12} align="center">
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={this.leaveButtonPressed}
           >
             Leave Room
           </Button>
-        </Stack>
-      </Container>
+        </Grid>
+      </Grid>
     );
   }
 }
